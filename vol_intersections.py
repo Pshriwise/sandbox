@@ -20,19 +20,49 @@ def get_vol_tris(filename):
     mesh.load(filename)
     
     #get all of the entity sets
-    vol_sets = mesh.getEntSets(iBase.Type.region)
+    sets = mesh.getEntSets(1)
+    
+    #filter out the voulme sets
+    vol_sets=[]
+    for set in sets:
+        tags = mesh.getAllTags(set)
+        for tag in tags:
+            if tag.name == "CATEGORY":
+                tag_handle = mesh.getTagHandle(tag.name)
+                category_type = filter(lambda null: null != 0 , tag_handle[set])
+                category_type = ''.join(chr(item) for item in category_type)
+                if category_type == "Volume": vol_sets.append(set)
 
+    #create a set to store triangles from multiple surface temporarily
+    dummy_set = mesh.createEntSet(False)
 
-    vol_tris = []
+    #start a list that will be a list of arrays
+    #each array containing all the triangles for a surface
+    all_vol_tris=[]
+    # get the triangles for each volume and return them
     for set in vol_sets:
-        tris = set.getEntities(iBase.Type.all, iMesh.Topology.triangle) 
-        vol_tris.append(tris)
+        #get the surface sets of the volume
+        surfs= set.getChildren(0) 
+
+        #for each surface, get the triangles and add them to the dummy_set
+        for surf in surfs:
+            tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
+            dummy_set.add(tris)
+        
+        #get all of the triangles for this volume from the dummy_set
+        vol_tris = dummy_set.getEntities(iBase.Type.all, iMesh.Topology.triangle)
+        #empty out our dummy_set before starting the next volume
+        dummy_set.remove(vol_tris)
+        #add this array of triangles to the total list
+        all_vol_tris.append(vol_tris)
+
+    #kill our dummy set to it isn't hanging around when we leave this function
+    mesh.destroyEntSet(dummy_set)
+    
+    return all_vol_tris
 
 
-    return vol_tris
-
-
-def intersection( axis, coord, triangle):
+def intersection(axis,coord,triangle):
 
     triangle_verts=np.array([],ndmin=3)
     triangle_verts.shape =(0,3,3)
@@ -43,17 +73,17 @@ def intersection( axis, coord, triangle):
     vert3 = mesh.getVtxCoords(verts[2])
 
     temp = np.vstack((vert1,vert2,vert3))
-    triangle_verts = np.append(triangle_verts, [temp], axis =0)
+    triangle_verts = np.append(triangle_verts,[temp],axis = 0)
 
     #check for an intersection                                                                                                                                                   
-    line = triangle_plane_intersect(axis, coord, triangle_verts)
+    line = triangle_plane_intersect(axis,coord,triangle_verts)
 
     intersect = True if line.size is not 0 else False
 
     return intersect, line
     
 def vol_plane_intersections(tris, axis, coord):
-    
+
     pcolls = []
     while len(tris) is not 0:
        
@@ -119,15 +149,17 @@ def insert_pnt( line, coll):
     if line[1].all() == coll[-1].all():
         coll = np.insert(coll, -1, line[0], 0)
     else:
-        raise Exeption("Error: no points coincide")
+        print "Warning: no points coincide in this tri, moving on"
+
     return coll
 
-volume_tris = get_vol_tris("cyl.h5m")
+if __name__ == "__main__":
+    volume_tris = get_vol_tris("cyl.h5m")
 
 for vol in volume_tris:
 
-    poly_collection=vol_plane_intersections(vol,1,1)
-
+    poly_collection=vol_plane_intersections(vol,0,0.1)
+    print poly_collection
     if len(poly_collection) is not 0:
         plot(poly_collection[:,0],poly_collection[:,1])
         show()
