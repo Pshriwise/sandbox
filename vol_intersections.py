@@ -136,7 +136,9 @@ def create_pcoll(intersected_tri, axis, coord, pnts):
             #line.shape
             #print pcoll.shape
             checked_tris.append(adj_tris[0])
-            adj_tris = mesh.getEnt2ndAdj(adj_tris[0], 1, iBase.Type.face)
+      
+            new_tris = mesh.getEnt2ndAdj(adj_tris[0], 1, iBase.Type.face)
+            adj_tris = np.concatenate((adj_tris,new_tris), axis=0)
         else:
             checked_tris.append(adj_tris[0])
             adj_tris=adj_tris[1:]
@@ -183,13 +185,13 @@ def main():
     for vol in volume_tris:
 
         for surface in vol:
-            poly_collections=vol_plane_intersections(surface,0,3.25)
+            poly_collections=vol_plane_intersections(surface,0,0)
             print len(poly_collections)
             for coll in poly_collections:
                 if len(coll) is not 0:
                     print "length of collection is: " + str(len(coll))
                     plot(coll[:,1],coll[:,2])
-                    show()
+    show()
 
 if __name__ == "__main__":
     main()
