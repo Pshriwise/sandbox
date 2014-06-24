@@ -90,9 +90,9 @@ def get_tri_points_by_vol(filename):
     # Get all of the entity sets
     sets = mesh.getEntSets(iBase.Type.all)
     vol_sets = get_vol_ent_sets(sets)
-    #vol_tri_points = get_tri_points_for_vols(vol_sets)
+    vol_tri_points = get_tri_points_for_vols(vol_sets)
 
-    return vol_sets
+    return vol_tri_points
     
 
 # <codecell>

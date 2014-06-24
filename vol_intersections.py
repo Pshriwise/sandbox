@@ -39,6 +39,7 @@ def get_vol_tris(filename):
     #start a list that will be a list of arrays
     #each array containing all the triangles for a surface
     all_vol_tris=[]
+    vol_tris=[]
     # get the triangles for each volume and return them
     for set in vol_sets:
         #get the surface sets of the volume
@@ -47,17 +48,18 @@ def get_vol_tris(filename):
         #for each surface, get the triangles and add them to the dummy_set
         for surf in surfs:
             tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
-            dummy_set.add(tris)
-        
-        #get all of the triangles for this volume from the dummy_set
-        vol_tris = dummy_set.getEntities(iBase.Type.all, iMesh.Topology.triangle)
-        #empty out our dummy_set before starting the next volume
-        dummy_set.remove(vol_tris)
-        #add this array of triangles to the total list
+            #dummy_set.add(tris)
+            vol_tris.append(tris)
         all_vol_tris.append(vol_tris)
+        #get all of the triangles for this volume from the dummy_set
+        #vol_tris = dummy_set.getEntities(iBase.Type.all, iMesh.Topology.triangle)
+        #empty out our dummy_set before starting the next volume
+        #dummy_set.remove(vol_tris)
+        #add this array of triangles to the total list
+        #all_vol_tris.append(vol_tris)
 
     #kill our dummy set to it isn't hanging around when we leave this function
-    mesh.destroyEntSet(dummy_set)
+    #mesh.destroyEntSet(dummy_set)
     
     return all_vol_tris
 
@@ -85,6 +87,7 @@ def intersection(axis,coord,triangle):
 def vol_plane_intersections(tris, axis, coord):
 
     pcolls = []
+    print "Original length of tris: " + str(len(tris))
     while len(tris) is not 0:
        
         intersect, line = intersection(axis, coord, tris[0])
@@ -93,12 +96,23 @@ def vol_plane_intersections(tris, axis, coord):
             #print "Printing intersection"
             #print line
             checked_tris , pcoll = create_pcoll( tris[0], axis, coord, line)
-            pcolls = pcoll
-            tris = list(Set(tris).difference(Set(checked_tris)))
+            print "Length of checked tris is: " + str(len(checked_tris))
+            pcolls.append(pcoll)
+            print "Current length of tris is: " + str(len(tris))
+            tris = remove_checked_tris(tris,checked_tris)
+            print "After removing checked tris, tris length is: " + str(len(tris))
             line = []
-        tris = tris[1:]
+        else:
+            tris = tris[1:]
     return pcolls
 
+def remove_checked_tris(tris,checked_tris):
+    tris = list(tris)
+    checked_tris = list(checked_tris)
+    tris = list(set(tris)-set(checked_tris))
+    return np.array(tris)
+               
+                
 def create_pcoll(intersected_tri, axis, coord, pnts):
     
     pcoll = pnts[0]
@@ -122,11 +136,12 @@ def create_pcoll(intersected_tri, axis, coord, pnts):
             #line.shape
             #print pcoll.shape
             checked_tris.append(adj_tris[0])
-            adj_tris = mesh.getEnt2ndAdj(adj_tris[0],1, iBase.Type.face)
+            adj_tris = mesh.getEnt2ndAdj(adj_tris[0], 1, iBase.Type.face)
         else:
             checked_tris.append(adj_tris[0])
             adj_tris=adj_tris[1:]
             #print "Removed tri"
+        intersect = False
 
 
     return checked_tris, pcoll
@@ -140,26 +155,41 @@ def checked( tri, checked_tris):
 
 def insert_pnt( line, coll):
 
-    if line[0].all() == coll[0].all():
+    if point_match(line[0],coll[0]):
         coll = np.insert(coll, 0, line[1], 0)
-    if line[0].all() == coll[-1].all():
-        coll = np.insert(coll, -1, line[1], 0)
-    if line[1].all() == coll[0].all():
+    elif point_match(line[0],coll[-1]):
+        coll = np.append(coll, [line[1]], 0)
+    elif point_match(line[1], coll[0]):
         coll = np.insert(coll, 0, line[0], 0)
-    if line[1].all() == coll[-1].all():
-        coll = np.insert(coll, -1, line[0], 0)
+    elif point_match(line[1],coll[-1]):
+        coll = np.append(coll, [line[0]], axis=0)
     else:
         print "Warning: no points coincide in this tri, moving on"
 
     return coll
 
-if __name__ == "__main__":
+def point_match(pnt1, pnt2):
+
+    b = False
+    x1, y1, z1 = round(pnt1[0],6),round(pnt1[1],6),round(pnt1[2],6)
+    x2, y2, z2 = round(pnt2[0],6),round(pnt2[1],6),round(pnt2[2],6)
+    if x1 == x2 and y1 == y2 and z1 == z2:
+        b = True
+    return b
+
+def main():
     volume_tris = get_vol_tris("cyl.h5m")
 
-for vol in volume_tris:
+    for vol in volume_tris:
 
-    poly_collection=vol_plane_intersections(vol,0,0.1)
-    print poly_collection
-    if len(poly_collection) is not 0:
-        plot(poly_collection[:,0],poly_collection[:,1])
-        show()
+        for surface in vol:
+            poly_collections=vol_plane_intersections(surface,0,3.25)
+            print len(poly_collections)
+            for coll in poly_collections:
+                if len(coll) is not 0:
+                    print "length of collection is: " + str(len(coll))
+                    plot(coll[:,1],coll[:,2])
+                    show()
+
+if __name__ == "__main__":
+    main()
