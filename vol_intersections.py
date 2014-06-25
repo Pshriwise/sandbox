@@ -51,15 +51,6 @@ def get_vol_tris(filename):
             #dummy_set.add(tris)
             vol_tris.append(tris)
         all_vol_tris.append(vol_tris)
-        #get all of the triangles for this volume from the dummy_set
-        #vol_tris = dummy_set.getEntities(iBase.Type.all, iMesh.Topology.triangle)
-        #empty out our dummy_set before starting the next volume
-        #dummy_set.remove(vol_tris)
-        #add this array of triangles to the total list
-        #all_vol_tris.append(vol_tris)
-
-    #kill our dummy set to it isn't hanging around when we leave this function
-    #mesh.destroyEntSet(dummy_set)
     
     return all_vol_tris
 
@@ -123,27 +114,24 @@ def create_pcoll(intersected_tri, axis, coord, pnts):
     while len(adj_tris) is not 0:
         #print len(adj_tris)
         intersect, line = intersection(axis, coord, adj_tris[0])
-        #print "Zero ID: " + str(id(adj_tris[0]))
-        #print "Checked Tris IDs: "
-        #for tri in checked_tris: print id(tri)
-        #print not checked(adj_tris[0],checked_tris)
+
         if intersect and not checked(adj_tris[0],checked_tris):
-            #print "Found new line!"
+
             #now we'll insert the point into the poly collection
             pcoll = insert_pnt(line[0], pcoll)
-            #print pcoll
-            #print "Next points: "
-            #line.shape
-            #print pcoll.shape
+
+            # add this triangle to the checked_tris now that we've inserted the point
             checked_tris.append(adj_tris[0])
       
+            # because an intersection was found on this tri, add its adj triangles to the stack
             new_tris = mesh.getEnt2ndAdj(adj_tris[0], 1, iBase.Type.face)
             adj_tris = np.concatenate((adj_tris,new_tris), axis=0)
+
         else:
             checked_tris.append(adj_tris[0])
             adj_tris=adj_tris[1:]
-            #print "Removed tri"
-        intersect = False
+
+
 
 
     return checked_tris, pcoll
