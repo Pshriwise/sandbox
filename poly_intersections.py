@@ -27,6 +27,46 @@ def get_surfaces(filename):
 
     print "There are " + str(len(surfs)) + " surfaces in this model."
     return surfs
+def surface_intersections( tris, axis, coord):
+
+    while len(tris) is not 0:
+       
+        intersect, line = intersection(axis, coord, tris[0])
+        #if we find an intersection, start looking for a poly collection
+        if intersect:
+            #print "Printing intersection"
+            #print line
+            checked_tris , pcoll = create_pcoll( tris[0], axis, coord, line)
+            print "Length of checked tris is: " + str(len(checked_tris))
+            pcolls.append(pcoll)
+            print "Current length of tris is: " + str(len(tris))
+            tris = remove_checked_tris(tris,checked_tris)
+            print "After removing checked tris, tris length is: " + str(len(tris))
+            line = []
+        else:
+            tris = tris[1:]
+    return pcolls
+
+def intersection(axis, coord, triangle):
+
+    triangle_verts=np.array([],ndmin=3)
+    triangle_verts.shape =(0,3,3)
+
+    verts = mesh.getEntAdj(triangle,iBase.Type.vertex)
+    vert1 = mesh.getVtxCoords(verts[0])
+    vert2 = mesh.getVtxCoords(verts[1])
+    vert3 = mesh.getVtxCoords(verts[2])
+
+    temp = np.vstack((vert1,vert2,vert3))
+    triangle_verts = np.append(triangle_verts,[temp],axis = 0)
+
+    #check for an intersection                                                                                                                                                   
+    line = triangle_plane_intersect(axis,coord,triangle_verts)
+
+    intersect = True if line.size is not 0 else False
+
+    return intersect, line
+
 
 
 def parsing():
