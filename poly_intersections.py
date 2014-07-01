@@ -165,6 +165,19 @@ def get_volumes():
     print "There are " + str(len(vols)) + " volumes in this model."
     return vols
 
+
+def get_vol_intersections(volume, intersect_dict):
+
+    #get the surfaces for this volume
+    surfs = volume.getChildren(0)
+
+    intersects = []
+    for surf in surfs:
+        intersects += intersect_dict[surf]
+
+    return intersects
+
+
 def parsing():
     parser = argparse.ArgumentParser()
 
@@ -188,19 +201,24 @@ def main():
     
     surfs = get_surfaces()
     
-    intersections={}
+    intersection_dict={}
     for surf in surfs: 
 
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
         print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
 
-        surf_intersections = surface_intersections(surf_tris, 0 , 0 )
+        surf_intersections = surface_intersections(surf_tris, 0 , 0.1 )
 
-        intersections[surf] = surf_intersections
-
-    print intersections
+        intersection_dict[surf] = surf_intersections
 
     vols = get_volumes()
+
+    for vol in vols:
+        
+        intersects = get_vol_intersections(vol, intersection_dict)
+        print "Retrieved "+str(len(intersects))+" intersections for this volume."
+
+        
 
 if __name__ == "__main__":
     main()
