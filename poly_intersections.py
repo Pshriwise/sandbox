@@ -124,10 +124,8 @@ def insert_pnt( line, coll):
 #########
 
 
-def get_surfaces(filename):
+def get_surfaces():
 
-    #load the mesh file
-    mesh.load(filename)
     
     #get all the surface entsets
     sets = mesh.getEntSets(1)
@@ -147,6 +145,26 @@ def get_surfaces(filename):
     print "There are " + str(len(surfs)) + " surfaces in this model."
     return surfs
 
+def get_volumes():
+
+    #get all the surface entsets
+    sets = mesh.getEntSets(0)
+    
+    vols = []
+    for set in sets:
+        tags = mesh.getAllTags(set)
+        
+        for tag in tags:
+            if tag.name == "CATEGORY":
+                tag_handle = mesh.getTagHandle(tag.name)
+                category_type = filter(lambda null: null != 0 , tag_handle[set])
+                category_type = ''.join(chr(item) for item in category_type)
+                if category_type == "Volume": vols.append(set)
+
+
+    print "There are " + str(len(vols)) + " volumes in this model."
+    return vols
+
 def parsing():
     parser = argparse.ArgumentParser()
 
@@ -163,10 +181,12 @@ def parsing():
 
 def main():
 
-    
     args = parsing()
+
+    #load the mesh file
+    mesh.load(args.filename)
     
-    surfs = get_surfaces(args.filename)
+    surfs = get_surfaces()
     
     intersections={}
     for surf in surfs: 
@@ -179,6 +199,8 @@ def main():
         intersections[surf] = surf_intersections
 
     print intersections
+
+    vols = get_volumes()
 
 if __name__ == "__main__":
     main()
