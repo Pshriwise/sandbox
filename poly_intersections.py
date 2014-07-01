@@ -167,7 +167,8 @@ def main():
     args = parsing()
     
     surfs = get_surfaces(args.filename)
-
+    
+    intersections={}
     for surf in surfs: 
 
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
@@ -175,9 +176,9 @@ def main():
 
         surf_intersections = surface_intersections(surf_tris, 0 , 0 )
 
-        intersections = {surf : surf_intersections}
+        intersections[surf] = surf_intersections
 
-        
+    print intersections
 
 if __name__ == "__main__":
     main()
