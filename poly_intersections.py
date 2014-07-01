@@ -2,7 +2,7 @@
 
 from itaps import iMesh, iBase
 import argparse
-
+from yt.utilities.lib.geometry_utils import triangle_plane_intersect
 mesh = iMesh.Mesh()
 
 def get_surfaces(filename):
@@ -49,6 +49,13 @@ def main():
     args = parsing()
     
     surfs = get_surfaces(args.filename)
+
+    for surf in surfs: 
+
+        surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
+        print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
+
+        
 
 
 if __name__ == "__main__":
