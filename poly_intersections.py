@@ -4,6 +4,8 @@ from itaps import iMesh, iBase
 import argparse
 from yt.utilities.lib.geometry_utils import triangle_plane_intersect
 import numpy as np
+from matplotlib import collections
+from pylab import * 
 
 mesh = iMesh.Mesh()
 
@@ -183,10 +185,14 @@ def stitch(intersections):
 
     colls = []
     #first, check for complete loops
-    for intersection in intersections:
+    i=0
+    while i < len(intersections):
+        intersection = intersections[i]
         if point_match(intersection[0],intersection[-1]):
             colls.append(intersection)
-            intersections.remove(intersection)
+            del intersections[i]
+            i=0
+        i+=1
         
     
     if 0 == len(intersections):
@@ -247,7 +253,7 @@ def main():
     args = parsing()
 
     #load the mesh file
-    mesh.load("cones.h5m")
+    mesh.load(args.filename)
     
     surfs = get_surfaces()
     
@@ -257,7 +263,7 @@ def main():
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
         print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
 
-        surf_intersections = surface_intersections(surf_tris, 2 , 0.1 )
+        surf_intersections = surface_intersections(surf_tris, 0, 0 )
 
         intersection_dict[surf] = surf_intersections
 
@@ -271,6 +277,9 @@ def main():
         print "Retrieved "+str(len(intersects))+" intersections for this volume."
         collections = stitch(intersects)
         print "Found "+str(len(collections))+" poly collections for this volume."
+        plot(collections[0][:,1],collections[0][:,2])
+        show()
+        
         #print collections 
 
 if __name__ == "__main__":
