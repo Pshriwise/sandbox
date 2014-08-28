@@ -37,26 +37,48 @@ def remove_checked_tris(tris,checked_tris):
                
 
 
-def surface_intersections( tris, axis, coord):
-
-    pcolls=[]
-    while len(tris) is not 0:
-       
-        intersect, line = intersection(axis, coord, tris[0])
-        #if we find an intersection, start looking for a poly collection
+def surface_intersections(tris, axis, coord):
+    
+    lines=[]
+    #get all intersections for these surface triangles
+    for tri in tris:
+        intersect, line = intersection(axis, coord, tri)
         if intersect:
-            #print "Printing intersection"
-            #print line
-            checked_tris , pcoll = create_pcoll( tris[0], axis, coord, line)
-            print "Length of checked tris is: " + str(len(checked_tris))
-            pcolls.append(pcoll)
-            print "Current length of tris is: " + str(len(tris))
-            tris = remove_checked_tris(tris,checked_tris)
-            print "After removing checked tris, tris length is: " + str(len(tris))
-            line = []
-        else:
-            tris = tris[1:]
-    return pcolls
+            lines.append(line[0])
+
+    #time to start building intersections
+    intersections=[]
+
+    while len(lines) !=0:
+        #arbitrarily start a new intersection
+        current_intersection = lines[0]
+        del lines[0]
+
+        i=0
+        while i < len(lines):
+            line = lines[i]
+            if point_match(line[0],current_intersection[0]):
+                current_intersection = np.insert(current_intersection, 0, line[1], 0)
+                del lines[i]
+                i=0
+            elif point_match(line[0],current_intersection[-1]):
+                current_intersection = np.append(current_intersection, [line[1]], 0)
+                del lines[i]
+                i=0
+            elif point_match(line[1], current_intersection[0]):
+                current_intersection = np.insert(current_intersection, 0, line[0], 0)
+                del lines[i]
+                i=0
+            elif point_match(line[1],current_intersection[-1]):
+                current_intersection = np.append(current_intersection, [line[0]], axis=0)
+                del lines[i]
+                i=0
+            else:
+                i+=1
+        intersections.append(current_intersection)
+    
+    return intersections
+
 
 def intersection(axis, coord, triangle):
 
@@ -263,7 +285,7 @@ def main():
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
         print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
 
-        surf_intersections = surface_intersections(surf_tris, 0, 0 )
+        surf_intersections = surface_intersections(surf_tris, 2, 0 )
 
         intersection_dict[surf] = surf_intersections
 
@@ -277,9 +299,12 @@ def main():
         print "Retrieved "+str(len(intersects))+" intersections for this volume."
         collections = stitch(intersects)
         print "Found "+str(len(collections))+" poly collections for this volume."
-        plot(collections[0][:,1],collections[0][:,2])
-        show()
-        
+        for collection in collections:            
+            plot(collection[:,0],collection[:,1])
+
+
+    show()
+       
         #print collections 
 
 if __name__ == "__main__":
