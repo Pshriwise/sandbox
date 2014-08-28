@@ -200,24 +200,31 @@ def stitch(intersections):
             colls.append(intersections.pop())
         else:
             #            print type(intersections)
-            for intersection in intersections:
+            i=0
+            while i < len(intersections):
+                intersection=intersections[i]
                 if point_match(colls[-1][0],intersection[0]):
                     #reverse and attach to the front of colls[-1]
                     colls[-1]=np.append(intersection[::-1],colls[-1],axis=0)
-                    intersections.remove(intersection)
+                    del intersections[i]
+                    i=0
                 elif point_match(colls[-1][0], intersection[-1]):
                     #attach to the front of colls[-1]
                     colls[-1]=np.append(intersection,colls[-1],axis=0)
                     #                   print type(intersection)
-                    intersections.remove(intersection)
+                    del intersections[i]
+                    i=0
                 elif point_match(colls[-1][-1], intersection[0]):
                     #attach to the back of colls[-1]
                     colls[-1]=np.append(colls[-1],intersection,axis=0)
-                    intersections.remove(intersection)
+                    del intersections[i]
+                    i=0
                 elif point_match(colls[-1][-1], intersection[-1]):
                     #reverse and attach to the back of colls[-1]
                     colls[-1]=np.append(colls[-1],intersection[::-1],axis=0)
-                    intersections.remove(intersection)
+                    del intersections[i]
+                    i=0
+                i+=1
         counter+=1;
     return colls
 
