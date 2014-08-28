@@ -177,6 +177,49 @@ def get_vol_intersections(volume, intersect_dict):
 
     return intersects
 
+# this function assumes that each plane-volume intersection will result 
+# in some number of complete loops
+def stitch(intersections):
+
+    colls = []
+    #first, check for complete loops
+    for intersection in intersections:
+        if point_match(intersection[0],intersection[-1]):
+            colls.append(intersection)
+            intersections.remove(intersection)
+        
+    
+    if 0 == len(intersections):
+        return colls
+    
+    #add the last intersection (arbitrary starting point)
+    colls.append(intersections.pop())
+    counter = 0
+    while len(intersections) != 0:
+        if point_match(colls[-1][0],colls[-1][-1]):
+            colls.append(intersections.pop())
+        else:
+            #            print type(intersections)
+            for intersection in intersections:
+                if point_match(colls[-1][0],intersection[0]):
+                    #reverse and attach to the front of colls[-1]
+                    colls[-1]=np.append(intersection[::-1],colls[-1],axis=0)
+                    intersections.remove(intersection)
+                elif point_match(colls[-1][0], intersection[-1]):
+                    #attach to the front of colls[-1]
+                    colls[-1]=np.append(intersection,colls[-1],axis=0)
+                    #                   print type(intersection)
+                    intersections.remove(intersection)
+                elif point_match(colls[-1][-1], intersection[0]):
+                    #attach to the back of colls[-1]
+                    colls[-1]=np.append(colls[-1],intersection,axis=0)
+                    intersections.remove(intersection)
+                elif point_match(colls[-1][-1], intersection[-1]):
+                    #reverse and attach to the back of colls[-1]
+                    colls[-1]=np.append(colls[-1],intersection[::-1],axis=0)
+                    intersections.remove(intersection)
+        counter+=1;
+    return colls
 
 def parsing():
     parser = argparse.ArgumentParser()
@@ -197,7 +240,7 @@ def main():
     args = parsing()
 
     #load the mesh file
-    mesh.load(args.filename)
+    mesh.load("cones.h5m")
     
     surfs = get_surfaces()
     
@@ -207,9 +250,11 @@ def main():
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
         print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
 
-        surf_intersections = surface_intersections(surf_tris, 0 , 0.1 )
+        surf_intersections = surface_intersections(surf_tris, 2 , 0.1 )
 
         intersection_dict[surf] = surf_intersections
+
+    #print intersection_dict 
 
     vols = get_volumes()
 
@@ -217,8 +262,9 @@ def main():
         
         intersects = get_vol_intersections(vol, intersection_dict)
         print "Retrieved "+str(len(intersects))+" intersections for this volume."
-
-        
+        collections = stitch(intersects)
+        print "Found "+str(len(collections))+" poly collections for this volume."
+        #print collections 
 
 if __name__ == "__main__":
     main()
