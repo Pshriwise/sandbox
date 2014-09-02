@@ -4,7 +4,8 @@ from itaps import iMesh, iBase
 import argparse
 from yt.utilities.lib.geometry_utils import triangle_plane_intersect
 import numpy as np
-from matplotlib import collections
+from matplotlib.collections import PolyCollection
+import matplotlib.pyplot as plt
 from pylab import * 
 
 mesh = iMesh.Mesh()
@@ -210,8 +211,11 @@ def stitch(intersections):
     i=0
     while i < len(intersections):
         intersection = intersections[i]
-        if point_match(intersection[0],intersection[-1]):
+        if point_match(intersection[0],intersection[-1]) and len(intersection) != 2:
             colls.append(intersection)
+            del intersections[i]
+            i=0
+        elif point_match(intersection[0],intersection[-1]) and len(intersection) == 2:
             del intersections[i]
             i=0
         i+=1
@@ -285,7 +289,7 @@ def main():
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
         print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
 
-        surf_intersections = surface_intersections(surf_tris, 2, 0 )
+        surf_intersections = surface_intersections(surf_tris, 2, 0.2 )
 
         intersection_dict[surf] = surf_intersections
 
@@ -293,17 +297,29 @@ def main():
 
     vols = get_volumes()
 
+    colors = ['c','g','r','m','b']
+    color = colors[0]
+
     for vol in vols:
+        
+        color = colors.pop(0)
+        colors.append(color)
         
         intersects = get_vol_intersections(vol, intersection_dict)
         print "Retrieved "+str(len(intersects))+" intersections for this volume."
         collections = stitch(intersects)
         print "Found "+str(len(collections))+" poly collections for this volume."
-        for collection in collections:            
-            plot(collection[:,0],collection[:,1])
-
-
-    show()
+        
+        test_coll = PolyCollection([list(zip(collections[0][:,0],collections[0][:,1]))], alpha=0.4)
+        #for collection in collections:            
+        #    plot(collection[:,0],collection[:,1])
+        #for intersection in intersects:
+        #    plot(intersection[:,0],intersection[:,1])
+        fig, ax = plt.subplots()
+        ax.add_collection(test_coll)
+        ax.autoscale_view()
+        
+    plt.show()  
        
         #print collections 
 
