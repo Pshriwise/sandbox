@@ -6,6 +6,8 @@ from yt.utilities.lib.geometry_utils import triangle_plane_intersect
 import numpy as np
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
+from matplotlib.path import Path
+from matplotlib.patches import PathPatch
 import matplotlib.pyplot as plt
 from pylab import * 
 
@@ -275,6 +277,14 @@ def parsing():
         
     return args
 
+def return_coding(ob):
+    # The codes will be all "LINETO" commands, except for "MOVETO"s at the
+    # beginning of each subpath
+    n = len(ob)
+    codes = np.ones(n, dtype=Path.code_type) * Path.LINETO
+    codes[0] = Path.MOVETO
+    return codes
+
 def main():
 
     args = parsing()
@@ -313,9 +323,16 @@ def main():
         collections = stitch(intersects)
         print "Found "+str(len(collections))+" poly collections for this volume."
         
-        for collection in collections:
-            patch = Polygon(np.delete(collection,2,1))
-            ax.add_patch(patch)
+        
+        
+        #for collection in collections:
+            #patch = Polygon(np.delete(collection,2,1))
+            #ax.add_patch(patch)
+        all_coords = np.delete(np.concatenate(collections[:],axis=0),2,1)   
+        all_codes=np.concatenate([return_coding(collection) for collection in collections])
+        path = Path(all_coords, all_codes)
+        patch = PathPatch(path, alpha=0.4, color=color)
+        ax.add_patch(patch)
     ax.autoscale_view()    
     plt.show()  
        
