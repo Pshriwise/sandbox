@@ -4,7 +4,8 @@ from itaps import iMesh, iBase
 import argparse
 from yt.utilities.lib.geometry_utils import triangle_plane_intersect
 import numpy as np
-from matplotlib.collections import PolyCollection
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Polygon
 import matplotlib.pyplot as plt
 from pylab import * 
 
@@ -313,9 +314,8 @@ def main():
         print "Found "+str(len(collections))+" poly collections for this volume."
         
         for collection in collections:
-            coll = PolyCollection([list(zip(collection[:,0],collection[:,1]))], alpha=0.4)
-            ax.add_collection(coll)
-    
+            patch = Polygon(np.delete(collection,2,1))
+            ax.add_patch(patch)
     ax.autoscale_view()    
     plt.show()  
        
