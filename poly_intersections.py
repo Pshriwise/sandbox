@@ -300,6 +300,8 @@ def main():
     colors = ['c','g','r','m','b']
     color = colors[0]
 
+    fig, ax = plt.subplots()
+            
     for vol in vols:
         
         color = colors.pop(0)
@@ -310,15 +312,11 @@ def main():
         collections = stitch(intersects)
         print "Found "+str(len(collections))+" poly collections for this volume."
         
-        test_coll = PolyCollection([list(zip(collections[0][:,0],collections[0][:,1]))], alpha=0.4)
-        #for collection in collections:            
-        #    plot(collection[:,0],collection[:,1])
-        #for intersection in intersects:
-        #    plot(intersection[:,0],intersection[:,1])
-        fig, ax = plt.subplots()
-        ax.add_collection(test_coll)
-        ax.autoscale_view()
-        
+        for collection in collections:
+            coll = PolyCollection([list(zip(collection[:,0],collection[:,1]))], alpha=0.4)
+            ax.add_collection(coll)
+    
+    ax.autoscale_view()    
     plt.show()  
        
         #print collections 
