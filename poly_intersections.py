@@ -298,9 +298,9 @@ def main():
     for surf in surfs: 
 
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
-        print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
+        #print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
 
-        surf_intersections = surface_intersections(surf_tris, 2, 0.2 )
+        surf_intersections = surface_intersections(surf_tris, 1, 0.1 )
 
         intersection_dict[surf] = surf_intersections
 
@@ -319,6 +319,7 @@ def main():
         colors.append(color)
         
         intersects = get_vol_intersections(vol, intersection_dict)
+        if len(intersects) == 0: continue
         print "Retrieved "+str(len(intersects))+" intersections for this volume."
         collections = stitch(intersects)
         print "Found "+str(len(collections))+" poly collections for this volume."
@@ -328,7 +329,7 @@ def main():
         #for collection in collections:
             #patch = Polygon(np.delete(collection,2,1))
             #ax.add_patch(patch)
-        all_coords = np.delete(np.concatenate(collections[:],axis=0),2,1)   
+        all_coords = np.delete(np.concatenate(collections[:],axis=0),1,1)   
         all_codes=np.concatenate([return_coding(collection) for collection in collections])
         path = Path(all_coords, all_codes)
         patch = PathPatch(path, alpha=0.4, color=color)
