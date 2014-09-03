@@ -280,7 +280,8 @@ def slice_faceted_model(filename, coord, axis):
     #get all the volumes
     vols = get_volumes()
 
-    patches=[]
+    all_coordinates=[]
+    all_codes=[]
     for vol in vols:
         
         #get the intersections for this volume based on its child surfaces
@@ -294,16 +295,21 @@ def slice_faceted_model(filename, coord, axis):
         
         #PLOTTING
         #rearrange coords into one long list and remove the coordinates for the slice
-        all_coords = np.delete(np.concatenate(collections[:],axis=0), axis, 1)   
+        coordinates = np.delete(np.concatenate(collections[:],axis=0), axis, 1)   
         #generate coding for the path that will allow for interior loops (see return_coding)
-        all_codes=np.concatenate([return_coding(collection) for collection in collections])
+        codes=np.concatenate([return_coding(collection) for collection in collections])
+        
+        all_coordinates.append(coordinates)
+        all_codes.append(codes)
+        coordinates=[]
+        codes=[]
         #create a patch
-        path = Path(all_coords, all_codes) 
+        #path = Path(all_coords, all_codes) 
         #make a patch for this path
-        patches.append(PathPatch(path))
+        #patches.append(PathPatch(path))
         #add the path to the plot
 
-    return patches
+    return all_coordinates, all_codes
 
 def main():
 
@@ -312,8 +318,14 @@ def main():
 
     axis = 2
     coord = 0.0
-    patches = slice_faceted_model(args.filename, coord, axis)
+    all_coords, all_codes = slice_faceted_model(args.filename, coord, axis)
 
+    patches=[]
+    #create patches for the plot
+    for i in range(len(all_codes)):
+        path = Path(all_coords[i], all_codes[i])         
+        patches.append(PathPatch(path))
+        
     colors = 100*np.random.rand(len(patches))
     p = PatchCollection(patches, alpha=0.4)
     p.set_array(np.array(colors))
