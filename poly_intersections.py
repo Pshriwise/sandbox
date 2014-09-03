@@ -260,7 +260,7 @@ def return_coding(ob):
     return codes
 
 
-def slice_faceted_model(filename):
+def slice_faceted_model(filename, coord, axis):
 
     mesh.load(filename)
     
@@ -273,7 +273,7 @@ def slice_faceted_model(filename):
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
         #print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
         # generate the surface intersections
-        surf_intersections = surface_intersections(surf_tris, 2, 0 )
+        surf_intersections = surface_intersections(surf_tris, axis, coord )
         #add the surface's entry to the dictionary
         intersection_dict[surf] = surf_intersections
 
@@ -294,7 +294,7 @@ def slice_faceted_model(filename):
         
         #PLOTTING
         #rearrange coords into one long list and remove the coordinates for the slice
-        all_coords = np.delete(np.concatenate(collections[:],axis=0),2,1)   
+        all_coords = np.delete(np.concatenate(collections[:],axis=0), axis, 1)   
         #generate coding for the path that will allow for interior loops (see return_coding)
         all_codes=np.concatenate([return_coding(collection) for collection in collections])
         #create a patch
@@ -310,7 +310,9 @@ def main():
     #parse arguments and load the file
     args = parsing()
 
-    patches = slice_faceted_model(args.filename)
+    axis = 2
+    coord = 0.0
+    patches = slice_faceted_model(args.filename, coord, axis)
 
     colors = 100*np.random.rand(len(patches))
     p = PatchCollection(patches, alpha=0.4)
