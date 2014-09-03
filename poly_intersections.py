@@ -4,6 +4,7 @@ from itaps import iMesh, iBase
 import argparse
 from yt.utilities.lib.geometry_utils import triangle_plane_intersect
 import numpy as np
+import matplotlib.cm as colormap
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 from matplotlib.path import Path
@@ -258,15 +259,10 @@ def return_coding(ob):
     codes[0] = Path.MOVETO
     return codes
 
-def main():
 
-    #setup colors for plotting
-    colors = ['c','g','r','m','b']
-    color = colors[0]
+def slice_faceted_model(filename):
 
-    #parse arguments and load the file
-    args = parsing()
-    mesh.load(args.filename)
+    mesh.load(filename)
     
     #get all surfaces in the file
     surfs = get_surfaces()    
@@ -284,14 +280,8 @@ def main():
     #get all the volumes
     vols = get_volumes()
 
-    #create a new figure
-    fig, ax = plt.subplots()
-            
+    patches=[]
     for vol in vols:
-        
-        #cycle to next color in list
-        color = colors.pop(0)
-        colors.append(color)
         
         #get the intersections for this volume based on its child surfaces
         intersects = get_vol_intersections(vol, intersection_dict)
@@ -308,12 +298,28 @@ def main():
         #generate coding for the path that will allow for interior loops (see return_coding)
         all_codes=np.concatenate([return_coding(collection) for collection in collections])
         #create a patch
-        path = Path(all_coords, all_codes)
+        path = Path(all_coords, all_codes) 
         #make a patch for this path
-        patch = PathPatch(path, alpha=0.4, color=color)
+        patches.append(PathPatch(path))
         #add the path to the plot
-        ax.add_patch(patch)
 
+    return patches
+
+def main():
+
+    #parse arguments and load the file
+    args = parsing()
+
+    patches = slice_faceted_model(args.filename)
+
+    colors = 100*np.random.rand(len(patches))
+    p = PatchCollection(patches, alpha=0.4)
+    p.set_array(np.array(colors))
+
+    #create a new figure
+    fig, ax = plt.subplots()
+
+    ax.add_collection(p)
     #show the plot!
     ax.autoscale_view()    
     plt.show()  
