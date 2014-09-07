@@ -15,6 +15,9 @@ from pylab import *
 mesh = iMesh.Mesh()
 
 
+CCW = 1
+CW = -1
+
 ########
 
 def point_match(pnt1, pnt2):
@@ -290,14 +293,20 @@ def slice_faceted_model(filename, coord, axis):
         if len(intersects) == 0: continue
         print "Retrieved "+str(len(intersects))+" intersections for this volume."
         #order the intersections into loops
-        collections = stitch(intersects)
-        print "Found "+str(len(collections))+" poly collections for this volume."
+        loops = stitch(intersects)
+        print "Found "+str(len(loops))+" poly collections for this volume."
+        
+        #remove the axis of intersection from the points
+        loops = np.delete(loops[:],axis,2)
+
+        #orient the loops for proper region fills
+        loops = orient_loops(loops)
         
         #PLOTTING
         #rearrange coords into one long list and remove the coordinates for the slice
-        coordinates = np.delete(np.concatenate(collections[:],axis=0), axis, 1)   
+        coordinates = np.concatenate(loops[:],axis=0)
         #generate coding for the path that will allow for interior loops (see return_coding)
-        codes=np.concatenate([return_coding(collection) for collection in collections])
+        codes=np.concatenate([return_coding(loop) for loop in loops])
         
         all_coordinates.append(coordinates)
         all_codes.append(codes)
@@ -311,12 +320,54 @@ def slice_faceted_model(filename, coord, axis):
 
     return all_coordinates, all_codes
 
+
+def orient_loops(loops):
+    
+    #first we will create a set of paths to represent the loops
+    paths = []
+    for loop in loops:
+        paths.append(Path(loop))
+
+    #now we will generate a containment matrix for the loops
+    M = gen_containment(paths)
+    #get the desired windings
+    windings = set_windings(M)
+    print windings
+    return loops
+
+def gen_containment(paths):
+
+    if __name__ == "__main__":
+        print "Generating containment matrix..."
+
+    n = len(paths)
+    mat = np.empty([n,n])
+    for i in range(n):
+        for j in range(n):
+            mat[i,j] = 1 if paths[j].contains_path(paths[i]) else 0
+
+    return mat
+
+def set_windings(M):
+
+    a,b = M.shape
+    assert(a==b)
+    #use the sum of the rows of M to determine windings for path[i]
+    windings=[]
+    # 1 indicates CCW; -1 indicates CW
+    for i in range(a):
+        wind = CCW if sum(M[i])%2 == 0 or sum(M[i]) == 0 else CW
+        windings.append(wind)
+
+    return windings
+        
+
 def main():
 
     #parse arguments and load the file
     args = parsing()
 
-    axis = 2
+    axis = 0
     coord = 0.0
     all_coords, all_codes = slice_faceted_model(args.filename, coord, axis)
 
@@ -325,7 +376,10 @@ def main():
     for i in range(len(all_codes)):
         path = Path(all_coords[i], all_codes[i])         
         patches.append(PathPatch(path))
-        
+
+    if __name__ == "__main__":
+        print "Plotting..."
+
     colors = 100*np.random.rand(len(patches))
     p = PatchCollection(patches, alpha=0.4)
     p.set_array(np.array(colors))
