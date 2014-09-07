@@ -289,36 +289,35 @@ def slice_faceted_model(filename, coord, axis):
         
         #get the intersections for this volume based on its child surfaces
         intersects = get_vol_intersections(vol, intersection_dict)
+
         #if no intersections are returned, move on to the next volume
         if len(intersects) == 0: continue
         print "Retrieved "+str(len(intersects))+" intersections for this volume."
+
         #order the intersections into loops
         loops = stitch(intersects)
         print "Found "+str(len(loops))+" poly collections for this volume."
-        
+
         #remove the axis of intersection from the points
         loops = [np.delete(loop,axis,1) for loop in loops]
-        #orient the loops for proper region fills
+
+        #orient the loops for proper plot fills
         if __name__ == "__main__":
             print "Re-orienting intersections..."
-
         loops = orient_loops(loops)
         
-        #PLOTTING
+        #Reformat
         #rearrange coords into one long list and remove the coordinates for the slice
         coordinates = np.concatenate(loops[:],axis=0)
+
         #generate coding for the path that will allow for interior loops (see return_coding)
         codes=np.concatenate([return_coding(loop) for loop in loops])
         
+        #add this volume's info to the global list
         all_coordinates.append(coordinates)
         all_codes.append(codes)
         coordinates=[]
         codes=[]
-        #create a patch
-        #path = Path(all_coords, all_codes) 
-        #make a patch for this path
-        #patches.append(PathPatch(path))
-        #add the path to the plot
 
     return all_coordinates, all_codes
 
@@ -353,25 +352,6 @@ def set_windings(current_windings, desired_windings, loops):
 
     return loops
 
-def gen_containment(paths):
-
-    n = len(paths)
-    mat = np.empty([n,n])
-    for i in range(n):
-        for j in range(n):
-            mat[i,j] = 1 if paths[j].contains_path(paths[i]) else 0
-
-    return mat
-
-def get_windings(paths):
-
-    windings=[]
-    for path in paths:
-        #int_pnt = get_interior_pnt(path)
-        winding = find_winding(path)
-        windings.append(winding)
-
-    return windings
 
 def find_winding(path):
 
@@ -384,17 +364,23 @@ def find_winding(path):
 
     return CW if area >= 0 else CCW
 
+def get_windings(paths):
 
-def get_interior_pnt(path):
+    windings=[]
+    for path in paths:
+        winding = find_winding(path)
+        windings.append(winding)
+    return windings
 
-    [(xmin,ymin),(xmax,ymax)] = path.get_extents().get_points()
+def gen_containment(paths):
 
-    while True:
-        x = xmin + random() * (xmax-xmin)
-        y = ymin + random() * (ymax-ymin)
-        pnt = np.array((x,y))
-        if path.contains_point(pnt):
-            return pnt
+    n = len(paths)
+    mat = np.empty([n,n])
+    for i in range(n):
+        for j in range(n):
+            mat[i,j] = 1 if paths[j].contains_path(paths[i]) else 0
+
+    return mat
     
 def get_fill_windings(M):
 
