@@ -297,9 +297,11 @@ def slice_faceted_model(filename, coord, axis):
         print "Found "+str(len(loops))+" poly collections for this volume."
         
         #remove the axis of intersection from the points
-        loops = np.delete(loops[:],axis,2)
-
+        loops = [np.delete(loop,axis,1) for loop in loops]
         #orient the loops for proper region fills
+        if __name__ == "__main__":
+            print "Re-orienting intersections..."
+
         loops = orient_loops(loops)
         
         #PLOTTING
@@ -330,15 +332,28 @@ def orient_loops(loops):
 
     #now we will generate a containment matrix for the loops
     M = gen_containment(paths)
+    #determine the current windings
+    current_windings = get_windings(paths)
     #get the desired windings
-    windings = set_windings(M)
-    print windings
+    desired_windings = get_fill_windings(M)
+    #alter the current windings to match the desired windings
+    loops = set_windings(current_windings, desired_windings, loops)
+    return loops
+
+def set_windings(current_windings, desired_windings, loops):
+
+    n = len(current_windings)
+    assert(len(current_windings)==len(desired_windings))
+    assert(len(current_windings)==len(loops))
+
+    for i in range(n):
+        
+        if current_windings[i] != desired_windings[i]:
+            loops[i]=loops[i][::-1]
+
     return loops
 
 def gen_containment(paths):
-
-    if __name__ == "__main__":
-        print "Generating containment matrix..."
 
     n = len(paths)
     mat = np.empty([n,n])
@@ -348,7 +363,40 @@ def gen_containment(paths):
 
     return mat
 
-def set_windings(M):
+def get_windings(paths):
+
+    windings=[]
+    for path in paths:
+        #int_pnt = get_interior_pnt(path)
+        winding = find_winding(path)
+        windings.append(winding)
+
+    return windings
+
+def find_winding(path):
+
+    area = 0
+    verts = path.vertices
+    j = len(verts) -1
+    for i in range(len(verts)-1):
+        area += (verts[j,0]+verts[i,0]) * (verts[j,1]-verts[i,1])
+        j=i
+
+    return CW if area >= 0 else CCW
+
+
+def get_interior_pnt(path):
+
+    [(xmin,ymin),(xmax,ymax)] = path.get_extents().get_points()
+
+    while True:
+        x = xmin + random() * (xmax-xmin)
+        y = ymin + random() * (ymax-ymin)
+        pnt = np.array((x,y))
+        if path.contains_point(pnt):
+            return pnt
+    
+def get_fill_windings(M):
 
     a,b = M.shape
     assert(a==b)
@@ -367,7 +415,7 @@ def main():
     #parse arguments and load the file
     args = parsing()
 
-    axis = 0
+    axis = 1
     coord = 0.0
     all_coords, all_codes = slice_faceted_model(args.filename, coord, axis)
 
