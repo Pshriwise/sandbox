@@ -298,6 +298,11 @@ def parsing():
     parser.add_argument(
         '-f', action='store', dest='filename', help='The path to the .h5m file')
 
+    parser.add_argument('-g', action='store_true', dest='by_group', 
+                        help='Plot intersections by groups using the same color for each group')
+    
+    parser.set_defaults(by_group=False)
+
     args = parser.parse_args()
 
     if not args.filename:
@@ -482,7 +487,7 @@ def main():
 
     axis = 1
     coord = 0.0
-    group_patches = slice_faceted_model(args.filename, coord, axis, by_group=True)
+    group_patches = slice_faceted_model(args.filename, coord, axis, args.by_group)
     patches=[]
     collections=[]
 
@@ -501,7 +506,8 @@ def main():
             patches.append(PathPatch(path, color=color, ec='black', lw=1, ls='solid'))
 
 
-    p = PatchCollection(patches, match_original=True, alpha=0.5)
+    match_color = True if args.by_group else False
+    p = PatchCollection(patches, match_original=match_color, alpha=0.5)
 
     #create a new figure
     fig, ax = plt.subplots()
@@ -509,7 +515,12 @@ def main():
 
     #for collection in collections:
     ax.add_collection(p)
-
+    # set random colors if not plotting by group
+    if match_color:
+        pass
+    else:
+        colors = 100*np.random.rand(len(patches))
+        p.set_array(np.array(colors))
     #show the plot!
     ax.autoscale_view()    
     plt.show()  
