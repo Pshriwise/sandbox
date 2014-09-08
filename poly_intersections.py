@@ -11,6 +11,7 @@ from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 import matplotlib.pyplot as plt
 from pylab import * 
+from random import random
 
 import time
 mesh = iMesh.Mesh()
@@ -139,6 +140,58 @@ def get_surfaces():
 
     return surfs
 
+def get_vols_by_group():
+    
+    mesh_sets=mesh.getEntSets()
+
+
+    all_vols = get_all_volumes()
+
+    group_vols=[]
+    group_names=[]
+    for s in mesh_sets:
+        tags=mesh.getAllTags(s)
+        for t in tags:
+            
+            if t.name == 'NAME':
+                group_name = tag_to_script(t[s])
+                group_names.append(group_name)
+                #assume only volumes in groups for now
+                vols = []
+                for vol in all_vols:
+                    if s.contains(vol): vols.append(vol)
+
+                group_vols.append(vols)
+                print vols
+
+    return group_vols, group_names
+                
+
+"""
+function to transform the tags into strings
+tag : string of the tag to add to tag_list
+tag_list : vector of tags in the problem
+returns tag_list
+"""
+def tag_to_script(tag):
+    a = []
+    # since we have a byte type tag loop over the 32 elements
+    for part in tag:
+        # if the byte char code is non 0
+        if (part != 0):
+            # convert to ascii
+            a.append(str(unichr(part)))
+            # join to end string
+            test = ''.join(a)
+            # the the string we are testing for is not in the list of found
+            # tag values, add to the list of tag_values
+    # if not already in list append to list
+    #    if not any(test in s for s in tag_list):
+    # the original code was incorrectly missing groups when one of the same
+    # name with/without rho was added
+    return test
+
+    
 def get_all_volumes():
 
     #get all the entsets
@@ -276,7 +329,7 @@ def create_surface_intersections(surfs, axis, coord):
         intersection_dict[surf] = surf_intersections
     return intersection_dict
 
-def slice_faceted_model(filename, coord, axis):
+def slice_faceted_model(filename, coord, axis, by_group=False):
 
     mesh.load(filename)
 
@@ -287,14 +340,16 @@ def slice_faceted_model(filename, coord, axis):
     intersection_dict = create_surface_intersections(surfs, axis, coord)
 
 
-    #get all the volumes
-    vols = get_all_volumes()
-
-    groups = [vols,vols]
+    if by_group:
+        groups, group_names =get_vols_by_group()
+    else:
+        #get all the volumes
+        vols = get_all_volumes()
+        groups = [vols]
 
     all_group_paths=[]
-    for group in groups:
-        group_paths = get_group_volume_paths(vols, axis, intersection_dict)
+    for group_vols in groups:
+        group_paths = get_group_volume_paths(group_vols, axis, intersection_dict)
         all_group_paths.append(group_paths)
 
     return all_group_paths
@@ -426,35 +481,35 @@ def main():
     args = parsing()
 
     axis = 1
-    coord = 5.0
-    group_patches = slice_faceted_model(args.filename, coord, axis)
+    coord = 0.0
+    group_patches = slice_faceted_model(args.filename, coord, axis, by_group=True)
     patches=[]
     collections=[]
 
     if __name__ == "__main__":
         print "Plotting..."
-    
+        
     #create patches for the plot
     for patch in group_patches:
         coords = patch[0]
         codes = patch[1]
         #name = group[2]
         #select color here
+        color = np.random.rand(3,1)
         for i in range(len(codes)):
             path = Path(coords[i], codes[i])         
-            patches.append(PathPatch(path))
+            patches.append(PathPatch(path, color=color, ec='black', lw=1, ls='solid'))
 
 
-        colors = 100*np.random.rand(len(patches))
-        p = PatchCollection(patches, alpha=0.4)
-        collections.append(p)
-        p.set_array(np.array(colors))
+    p = PatchCollection(patches, match_original=True, alpha=0.5)
 
     #create a new figure
     fig, ax = plt.subplots()
 
-    for collection in collections:
-        ax.add_collection(collection)
+
+    #for collection in collections:
+    ax.add_collection(p)
+
     #show the plot!
     ax.autoscale_view()    
     plt.show()  
@@ -462,7 +517,7 @@ def main():
 if __name__ == "__main__":
     start = time.clock()
     main()
-    print "Took " + str((time.clock()-start)) + "seconds total."
+    print "Took " + str((time.clock()-start)) + " seconds total."
 
 
 
