@@ -263,15 +263,9 @@ def return_coding(ob):
     codes[0] = Path.MOVETO
     return codes
 
+def create_surface_intersections(surfs, axis, coord):
 
-def slice_faceted_model(filename, coord, axis):
-
-    mesh.load(filename)
-    
-    #get all surfaces in the file
-    surfs = get_surfaces()    
     intersection_dict={}
-
     for surf in surfs: 
         # get the surface's triangles
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
@@ -280,6 +274,17 @@ def slice_faceted_model(filename, coord, axis):
         surf_intersections = surface_intersections(surf_tris, axis, coord )
         #add the surface's entry to the dictionary
         intersection_dict[surf] = surf_intersections
+    return intersection_dict
+
+def slice_faceted_model(filename, coord, axis):
+
+    mesh.load(filename)
+
+    #get all surfaces in the file
+    surfs = get_surfaces()
+
+    #get the intersections on each surface and store in dict with surfs as the keys
+    intersection_dict = create_surface_intersections(surfs, axis, coord)
 
     #get all the volumes
     vols = get_volumes()
@@ -303,11 +308,11 @@ def slice_faceted_model(filename, coord, axis):
         #remove the axis of intersection from the points
         loops = [np.delete(loop,axis,1) for loop in loops]
 
-        #orient the loops for proper plot fills
+
         if __name__ == "__main__":
             print "Re-orienting intersections..."
-
         start = time.clock()
+        #orient the loops for proper plot fills
         loops = orient_loops(loops)
         orient_time += (time.clock()-start)
 
