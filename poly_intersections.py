@@ -139,7 +139,7 @@ def get_surfaces():
 
     return surfs
 
-def get_volumes():
+def get_all_volumes():
 
     #get all the entsets
     sets = mesh.getEntSets(0)
@@ -286,8 +286,20 @@ def slice_faceted_model(filename, coord, axis):
     #get the intersections on each surface and store in dict with surfs as the keys
     intersection_dict = create_surface_intersections(surfs, axis, coord)
 
+
     #get all the volumes
-    vols = get_volumes()
+    vols = get_all_volumes()
+
+    groups = [vols,vols]
+
+    all_group_paths=[]
+    for group in groups:
+        group_paths = get_group_volume_paths(vols, axis, intersection_dict)
+        all_group_paths.append(group_paths)
+
+    return all_group_paths
+
+def get_group_volume_paths(vols, axis, intersection_dict):
 
     all_coordinates=[]
     all_codes=[]
@@ -415,25 +427,34 @@ def main():
 
     axis = 1
     coord = 5.0
-    all_coords, all_codes = slice_faceted_model(args.filename, coord, axis)
+    group_patches = slice_faceted_model(args.filename, coord, axis)
     patches=[]
-
-    #create patches for the plot
-    for i in range(len(all_codes)):
-        path = Path(all_coords[i], all_codes[i])         
-        patches.append(PathPatch(path))
+    collections=[]
 
     if __name__ == "__main__":
         print "Plotting..."
+    
+    #create patches for the plot
+    for patch in group_patches:
+        coords = patch[0]
+        codes = patch[1]
+        #name = group[2]
+        #select color here
+        for i in range(len(codes)):
+            path = Path(coords[i], codes[i])         
+            patches.append(PathPatch(path))
 
-    colors = 100*np.random.rand(len(patches))
-    p = PatchCollection(patches, alpha=0.4)
-    p.set_array(np.array(colors))
+
+        colors = 100*np.random.rand(len(patches))
+        p = PatchCollection(patches, alpha=0.4)
+        collections.append(p)
+        p.set_array(np.array(colors))
 
     #create a new figure
     fig, ax = plt.subplots()
 
-    ax.add_collection(p)
+    for collection in collections:
+        ax.add_collection(collection)
     #show the plot!
     ax.autoscale_view()    
     plt.show()  
