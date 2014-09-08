@@ -12,6 +12,7 @@ from matplotlib.patches import PathPatch
 import matplotlib.pyplot as plt
 from pylab import * 
 
+import time
 mesh = iMesh.Mesh()
 
 
@@ -285,6 +286,7 @@ def slice_faceted_model(filename, coord, axis):
 
     all_coordinates=[]
     all_codes=[]
+    orient_time=0
     for vol in vols:
         
         #get the intersections for this volume based on its child surfaces
@@ -304,8 +306,11 @@ def slice_faceted_model(filename, coord, axis):
         #orient the loops for proper plot fills
         if __name__ == "__main__":
             print "Re-orienting intersections..."
+
+        start = time.clock()
         loops = orient_loops(loops)
-        
+        orient_time += (time.clock()-start)
+
         #Reformat
         #rearrange coords into one long list and remove the coordinates for the slice
         coordinates = np.concatenate(loops[:],axis=0)
@@ -319,6 +324,8 @@ def slice_faceted_model(filename, coord, axis):
         coordinates=[]
         codes=[]
 
+    if __name__ == "__main__":
+        print "Took " + str(orient_time) + " seconds to reorient loops."
     return all_coordinates, all_codes
 
 
@@ -402,10 +409,10 @@ def main():
     args = parsing()
 
     axis = 1
-    coord = 0.0
+    coord = 5.0
     all_coords, all_codes = slice_faceted_model(args.filename, coord, axis)
-
     patches=[]
+
     #create patches for the plot
     for i in range(len(all_codes)):
         path = Path(all_coords[i], all_codes[i])         
@@ -427,7 +434,9 @@ def main():
     plt.show()  
        
 if __name__ == "__main__":
+    start = time.clock()
     main()
+    print "Took " + str((time.clock()-start)) + "seconds total."
 
 
 
