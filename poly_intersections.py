@@ -297,7 +297,7 @@ def parsing():
     parser.add_argument(
         '-f', action='store', dest='filename', help='The path to the .h5m file')
 
-    parser.add_argument('-g', action='store_true', dest='by_group', 
+    parser.add_argument('--by-group', action='store_true', dest='by_group', 
                         help='Plot intersections by groups using the same color for each group')
     
     parser.set_defaults(by_group=False)
@@ -499,7 +499,7 @@ def main():
     #parse arguments and load the file
     args = parsing()
 
-    axis = 1
+    axis = 2
     coord = 0.0
     all_paths, group_names = slice_faceted_model(args.filename, coord, axis, args.by_group)
 
@@ -520,6 +520,8 @@ def main():
     for patch in patches:
         ax.add_patch(patch)
 
+    if args.by_group:
+        ax.legend(patches,group_names)
     #show the plot!
     ax.autoscale_view()    
     plt.show()  
