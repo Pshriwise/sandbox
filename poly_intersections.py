@@ -162,7 +162,6 @@ def get_vols_by_group():
                     if s.contains(vol): vols.append(vol)
 
                 group_vols.append(vols)
-                print vols
 
     return group_vols, group_names
                 
@@ -345,21 +344,36 @@ def slice_faceted_model(filename, coord, axis, by_group=False):
     intersection_dict = create_surface_intersections(surfs, axis, coord)
 
 
+    #get all volumes in the model
+    volumes = get_all_volumes()
+
+
+    all_paths=[]
+    group_names=[]
     if by_group:
-        groups, group_names =get_vols_by_group()
+        # if by group has been requested, sort volumes into their groups
+        group_vols, group_names =get_vols_by_group()
+
+        for vols in group_vols:
+            #get the coords and codes for each volume
+            all_coords, all_codes = get_volume_paths(vols, axis, intersection_dict)
+            #when doing this by group, concat all the volumes in a group into one path
+            if all_coords == []:
+                continue
+            else:
+                group_path = np.concatenate(all_coords[:],axis=0)
+                group_code = np.concatenate(all_codes[:],axis=0)
+            all_paths.append([group_path,group_code])
+            
     else:
-        #get all the volumes
-        vols = get_all_volumes()
-        groups = [vols]
+        #if by group is not requested, return a path and code for each volume
+        all_coords, all_codes  = get_volume_paths(volumes, axis, intersection_dict)
 
-    all_group_paths=[]
-    for group_vols in groups:
-        group_paths = get_group_volume_paths(group_vols, axis, intersection_dict)
-        all_group_paths.append(group_paths)
+        all_paths=zip(all_coords,all_codes)
 
-    return all_group_paths
+    return all_paths, group_names
 
-def get_group_volume_paths(vols, axis, intersection_dict):
+def get_volume_paths(vols, axis, intersection_dict):
 
     all_coordinates=[]
     all_codes=[]
@@ -487,40 +501,25 @@ def main():
 
     axis = 1
     coord = 0.0
-    group_patches = slice_faceted_model(args.filename, coord, axis, args.by_group)
-    patches=[]
-    collections=[]
+    all_paths, group_names = slice_faceted_model(args.filename, coord, axis, args.by_group)
 
     if __name__ == "__main__":
         print "Plotting..."
-        
-    #create patches for the plot
-    for patch in group_patches:
-        coords = patch[0]
-        codes = patch[1]
-        #name = group[2]
-        #select color here
+
+    patches=[]
+    for coord, code in all_paths:
+        path = Path(coord,code)
         color = np.random.rand(3,1)
-        for i in range(len(codes)):
-            path = Path(coords[i], codes[i])         
-            patches.append(PathPatch(path, color=color, ec='black', lw=1, ls='solid'))
+        patches.append(PathPatch(path, color=color, ec='black', lw=1))
 
-
-    match_color = True if args.by_group else False
-    p = PatchCollection(patches, match_original=match_color, alpha=0.5)
-
+        
     #create a new figure
     fig, ax = plt.subplots()
 
+    #add the patches to the plot
+    for patch in patches:
+        ax.add_patch(patch)
 
-    #for collection in collections:
-    ax.add_collection(p)
-    # set random colors if not plotting by group
-    if match_color:
-        pass
-    else:
-        colors = 100*np.random.rand(len(patches))
-        p.set_array(np.array(colors))
     #show the plot!
     ax.autoscale_view()    
     plt.show()  
