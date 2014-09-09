@@ -299,7 +299,15 @@ def parsing():
 
     parser.add_argument('--by-group', action='store_true', dest='by_group', 
                         help='Plot intersections by groups using the same color for each group')
+
+    parser.add_argument('-axis', action='store', dest='axis', type=int,
+                        help='Set axis along which to slice the model x=0, y=1, z=2')
+
+    parser.add_argument('-coord', action='store', dest='coord', type=float,
+                        help='Coordinate for the slice')
     
+    parser.set_defaults(axis = 0)
+    parser.set_defaults(coord = 0)
     parser.set_defaults(by_group=False)
 
     args = parser.parse_args()
@@ -500,9 +508,9 @@ def main():
     #parse arguments and load the file
     args = parsing()
 
-    axis = 2
-    coord = 0.0
-    all_paths, group_names = slice_faceted_model(args.filename, coord, axis, args.by_group)
+    print args.coord
+    print args.axis
+    all_paths, group_names = slice_faceted_model(args.filename, args.coord, args.axis, args.by_group)
 
     if __name__ == "__main__":
         print "Plotting..."
