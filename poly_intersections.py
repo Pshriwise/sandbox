@@ -354,11 +354,12 @@ def slice_faceted_model(filename, coord, axis, by_group=False):
         # if by group has been requested, sort volumes into their groups
         group_vols, group_names =get_vols_by_group()
 
-        for vols in group_vols:
+        for vols, name in zip(group_vols,group_names):
             #get the coords and codes for each volume
             all_coords, all_codes = get_volume_paths(vols, axis, intersection_dict)
             #when doing this by group, concat all the volumes in a group into one path
             if all_coords == []:
+                group_names.remove(name)
                 continue
             else:
                 group_path = np.concatenate(all_coords[:],axis=0)
