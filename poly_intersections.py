@@ -510,7 +510,7 @@ def main():
     for coord, code in all_paths:
         path = Path(coord,code)
         color = np.random.rand(3,1)
-        patches.append(PathPatch(path, color=color, ec='black', lw=1))
+        patches.append(PathPatch(path, color=color, ec='black', lw=1, alpha=0.4))
 
         
     #create a new figure
