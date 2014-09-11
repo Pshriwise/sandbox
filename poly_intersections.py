@@ -22,8 +22,11 @@ CW = -1
 
 ########
 
-def point_match(pnt1, pnt2):
 
+def point_match(pnt1, pnt2):
+    """
+    Returns true or false for matching points after rounding each coordinate to 6 digits.
+    """
     b = False
     x1, y1, z1 = round(pnt1[0],6),round(pnt1[1],6),round(pnt1[2],6)
     x2, y2, z2 = round(pnt2[0],6),round(pnt2[1],6),round(pnt2[2],6)
@@ -32,7 +35,9 @@ def point_match(pnt1, pnt2):
     return b
 
 def surface_intersections(tris, axis, coord):
-    
+    """
+    Returns a list of ordered intersections for a gien set of triangles.
+    """
     lines=[]
     #get all intersections for these surface triangles
     for tri in tris:
@@ -140,12 +145,10 @@ def get_surfaces():
 
     return surfs
 
-def get_vols_by_group():
+def get_vols_by_group(volumes):
     
     mesh_sets=mesh.getEntSets()
 
-
-    all_vols = get_all_volumes()
 
     group_vols=[]
     group_names=[]
@@ -158,7 +161,7 @@ def get_vols_by_group():
                 group_names.append(group_name)
                 #assume only volumes in groups for now
                 vols = []
-                for vol in all_vols:
+                for vol in volumes:
                     if s.contains(vol): vols.append(vol)
 
                 group_vols.append(vols)
@@ -360,7 +363,7 @@ def slice_faceted_model(filename, coord, axis, by_group=False):
     group_names=[]
     if by_group:
         # if by group has been requested, sort volumes into their groups
-        group_vols, group_names =get_vols_by_group()
+        group_vols, group_names =get_vols_by_group(volumes)
 
         for vols, name in zip(group_vols,group_names):
             #get the coords and codes for each volume
@@ -519,7 +522,7 @@ def main():
     for coord, code in all_paths:
         path = Path(coord,code)
         color = np.random.rand(3,1)
-        patches.append(PathPatch(path, color=color, ec='black', lw=1, alpha=0.4))
+        patches.append(PathPatch(path, color=color, ec='black', lw=1))
 
         
     #create a new figure
@@ -532,7 +535,8 @@ def main():
     if args.by_group:
         ax.legend(patches,group_names)
     #show the plot!
-    ax.autoscale_view()    
+    ax.autoscale_view()
+    ax.set_aspect('equal')
     plt.show()  
        
 if __name__ == "__main__":
