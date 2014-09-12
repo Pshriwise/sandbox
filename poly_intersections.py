@@ -84,20 +84,20 @@ def intersection(axis, coord, triangle):
     intersection was found.
     """
     #create an array for the coordinates
-    triangle_verts=np.array([],ndmin=3)
-    triangle_verts.shape =(0,3,3)
+    triangle_verts=np.array([], ndmin=3)
+    triangle_verts.shape =(0, 3, 3)
 
-    verts = mesh.getEntAdj(triangle,iBase.Type.vertex)
+    verts = mesh.getEntAdj(triangle, iBase.Type.vertex)
     vert1 = mesh.getVtxCoords(verts[0])
     vert2 = mesh.getVtxCoords(verts[1])
     vert3 = mesh.getVtxCoords(verts[2])
 
-    temp = np.vstack((vert1,vert2,vert3))
+    temp = np.vstack( (vert1, vert2, vert3) )
     #insert the coordinates into the array
-    triangle_verts = np.append(triangle_verts,[temp],axis = 0)
+    triangle_verts = np.append(triangle_verts, [temp], axis = 0)
 
     #check for an intersection                                                                                                                                                   
-    line = triangle_plane_intersect(axis,coord,triangle_verts)
+    line = triangle_plane_intersect(axis, coord, triangle_verts)
 
     #if a line is returned, indicate that we have an intersection
     intersect = True if line.size is not 0 else False
@@ -256,8 +256,6 @@ def get_vol_intersections(volume, intersect_dict):
 
     return intersections
 
-# this function assumes that each plane-volume intersection will result 
-# in some number of complete loops
 def stitch(intersections):
     """
     Takes an input list of ordered *intersections* and
@@ -275,17 +273,16 @@ def stitch(intersections):
     while i < len(intersections):
         intersection = intersections[i]
         # add if this is full loop
-        if point_match(intersection[0],intersection[-1]) and len(intersection) != 2:
+        if point_match(intersection[0], intersection[-1]) and len(intersection) != 2:
             colls.append(intersection)
             del intersections[i]
             i=0
         # if this is a segment with a near-zerio length, remove it
-        elif point_match(intersection[0],intersection[-1]) and len(intersection) == 2:
+        elif point_match(intersection[0], intersection[-1]) and len(intersection) == 2:
             del intersections[i]
             i=0
         i+=1
         
-    
     if 0 == len(intersections):
         return colls
     
@@ -297,34 +294,34 @@ def stitch(intersections):
         
         #if the current collection is a loop, move to 
         #the next arb starting point
-        if point_match(colls[-1][0],colls[-1][-1]):
+        if point_match(colls[-1][0], colls[-1][-1]):
             colls.append(intersections.pop())
 
         else:
-            i=0
+            i = 0
             while i < len(intersections):
-                intersection=intersections[i]
-                if point_match(colls[-1][0],intersection[0]):
+                intersection = intersections[i]
+                if point_match(colls[-1][0], intersection[0]):
                     #reverse and attach to the front of colls[-1]
-                    colls[-1]=np.append(intersection[::-1],colls[-1],axis=0)
+                    colls[-1] = np.append(intersection[::-1], colls[-1], axis=0)
                     del intersections[i]
-                    i=0
+                    i = 0
                 elif point_match(colls[-1][0], intersection[-1]):
                     #attach to the front of colls[-1]
-                    colls[-1]=np.append(intersection,colls[-1],axis=0)
+                    colls[-1] = np.append(intersection, colls[-1], axis=0)
                     #                   print type(intersection)
                     del intersections[i]
-                    i=0
+                    i = 0
                 elif point_match(colls[-1][-1], intersection[0]):
                     #attach to the back of colls[-1]
-                    colls[-1]=np.append(colls[-1],intersection,axis=0)
+                    colls[-1] = np.append(colls[-1], intersection, axis=0)
                     del intersections[i]
-                    i=0
+                    i = 0
                 elif point_match(colls[-1][-1], intersection[-1]):
                     #reverse and attach to the back of colls[-1]
-                    colls[-1]=np.append(colls[-1],intersection[::-1],axis=0)
+                    colls[-1] = np.append(colls[-1], intersection[::-1], axis=0)
                     del intersections[i]
-                    i=0
+                    i = 0
                 #if no match is found, move to next intersection
                 i+=1
 
@@ -390,7 +387,7 @@ def create_surface_intersections(surfs, axis, coord):
         surf_tris = surf.getEntities(iBase.Type.all, iMesh.Topology.triangle)
         #print "Retrieved " + str(len(surf_tris)) + " triangles from a surface set."
         # generate the surface intersections
-        surf_intersections = surface_intersections(surf_tris, axis, coord )
+        surf_intersections = surface_intersections(surf_tris, axis, coord)
         #add the surface's entry to the dictionary
         intersection_dict[surf] = surf_intersections
     return intersection_dict
@@ -416,13 +413,13 @@ def slice_faceted_model(filename, coord, axis, by_group=False):
     volumes = get_all_volumes()
 
 
-    all_paths=[]
-    group_names=[]
+    all_paths = []
+    group_names = []
     if by_group:
         # if by group has been requested, sort volumes into their groups
-        group_vols, group_names =get_vols_by_group(volumes)
+        group_vols, group_names = get_vols_by_group(volumes)
 
-        for vols, name in zip(group_vols,group_names):
+        for vols, name in zip(group_vols, group_names):
             #get the coords and codes for each volume
             all_coords, all_codes = get_volume_paths(vols, axis, intersection_dict)
             #when doing this by group, concat all the volumes in a group into one path
@@ -430,15 +427,15 @@ def slice_faceted_model(filename, coord, axis, by_group=False):
                 group_names.remove(name)
                 continue
             else:
-                group_path = np.concatenate(all_coords[:],axis=0)
-                group_code = np.concatenate(all_codes[:],axis=0)
-            all_paths.append([group_path,group_code])
+                group_path = np.concatenate(all_coords[:], axis=0)
+                group_code = np.concatenate(all_codes[:], axis=0)
+            all_paths.append([group_path, group_code])
             
     else:
         #if by group is not requested, return a path and code for each volume
         all_coords, all_codes  = get_volume_paths(volumes, axis, intersection_dict)
 
-        all_paths=zip(all_coords,all_codes)
+        all_paths=zip(all_coords, all_codes)
 
     return all_paths, group_names
 
@@ -447,9 +444,9 @@ def get_volume_paths(vols, axis, intersection_dict):
     For a given set of volumes, this will return a list of 2D paths
     for each volume in *vols*.
     """
-    all_coordinates=[]
-    all_codes=[]
-    orient_time=0
+    all_coordinates = []
+    all_codes = []
+    orient_time = 0
     for vol in vols:
         
         #get the intersections for this volume based on its child surfaces
@@ -464,7 +461,7 @@ def get_volume_paths(vols, axis, intersection_dict):
         print "Found "+str(len(loops))+" poly collections for this volume."
 
         #remove the axis of intersection from the points
-        loops = [np.delete(loop,axis,1) for loop in loops]
+        loops = [np.delete(loop, axis, 1) for loop in loops]
 
 
         if __name__ == "__main__":
@@ -476,16 +473,16 @@ def get_volume_paths(vols, axis, intersection_dict):
 
         #Reformat
         #rearrange coords into one long list and remove the coordinates for the slice
-        coordinates = np.concatenate(loops[:],axis=0)
+        coordinates = np.concatenate(loops[:], axis=0)
 
         #generate coding for the path that will allow for interior loops (see return_coding)
-        codes=np.concatenate([return_coding(loop) for loop in loops])
+        codes = np.concatenate([return_coding(loop) for loop in loops])
         
         #add this volume's info to the global list
         all_coordinates.append(coordinates)
         all_codes.append(codes)
-        coordinates=[]
-        codes=[]
+        coordinates = []
+        codes = []
 
     if __name__ == "__main__":
         print "Took " + str(orient_time) + " seconds to reorient loops."
@@ -511,6 +508,7 @@ def orient_loops(loops):
     desired_windings = get_fill_windings(M)
     #alter the current windings to match the desired windings
     loops = set_windings(current_windings, desired_windings, loops)
+
     return loops
 
 def set_windings(current_windings, desired_windings, loops):
@@ -522,13 +520,13 @@ def set_windings(current_windings, desired_windings, loops):
     A list of the same size as *loops* is returned. 
     """
     n = len(current_windings)
-    assert(len(current_windings)==len(desired_windings))
-    assert(len(current_windings)==len(loops))
+    assert(len(current_windings) == len(desired_windings))
+    assert(len(current_windings) == len(loops))
 
     for i in range(n):
-        
         if current_windings[i] != desired_windings[i]:
-            loops[i]=loops[i][::-1]
+            #reverse the loop
+            loops[i] = loops[i][::-1]
 
     return loops
 
@@ -543,7 +541,7 @@ def find_winding(path):
     verts = path.vertices
     j = len(verts) -1
     for i in range(len(verts)-1):
-        area += (verts[j,0]+verts[i,0]) * (verts[j,1]-verts[i,1])
+        area += (verts[j,0] + verts[i,0]) * (verts[j,1] - verts[i,1])
         j=i
 
     return CW if area >= 0 else CCW
@@ -557,6 +555,7 @@ def get_windings(paths):
     for path in paths:
         winding = find_winding(path)
         windings.append(winding)
+
     return windings
 
 def gen_containment(paths):
@@ -572,7 +571,7 @@ def gen_containment(paths):
     ALWAYS GIVE A DEFINITE NESTING OF THE PATHS.
     """
     n = len(paths)
-    mat = np.empty([n,n])
+    mat = np.empty([n, n])
     for i in range(n):
         for j in range(n):
             mat[i,j] = 1 if paths[j].contains_path(paths[i]) else 0
@@ -585,9 +584,9 @@ def get_fill_windings(M):
     calculate the desired windings of the paths represented by the matrix.
     """
     a,b = M.shape
-    assert(a==b)
+    assert(a == b)
     #use the sum of the rows of M to determine windings for path[i]
-    windings=[]
+    windings = []
     # 1 indicates CCW; -1 indicates CW
     for i in range(a):
         wind = CCW if sum(M[i])%2 == 0 or sum(M[i]) == 0 else CW
@@ -607,10 +606,10 @@ def main():
     if __name__ == "__main__":
         print "Plotting..."
 
-    patches=[]
+    patches = []
     for coord, code in all_paths:
-        path = Path(coord,code)
-        color = np.random.rand(3,1)
+        path = Path(coord, code)
+        color = np.random.rand(3, 1)
         patches.append(PathPatch(path, color=color, ec='black', lw=1, alpha=0.4))
 
         
@@ -622,7 +621,7 @@ def main():
         ax.add_patch(patch)
 
     if args.by_group:
-        ax.legend(patches,group_names, prop={'size':10})
+        ax.legend(patches, group_names, prop={'size':10})
     #show the plot!
     ax.autoscale_view()
     ax.set_aspect('equal')
