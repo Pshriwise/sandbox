@@ -4,14 +4,10 @@ from itaps import iMesh, iBase
 import argparse
 from yt.utilities.lib.geometry_utils import triangle_plane_intersect
 import numpy as np
-import matplotlib.cm as colormap
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Polygon
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 import matplotlib.pyplot as plt
-from pylab import * 
-from random import random
+
 
 import time
 mesh = iMesh.Mesh()
