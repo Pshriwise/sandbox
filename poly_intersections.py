@@ -522,7 +522,7 @@ def main():
     for coord, code in all_paths:
         path = Path(coord,code)
         color = np.random.rand(3,1)
-        patches.append(PathPatch(path, color=color, ec='black', lw=1))
+        patches.append(PathPatch(path, color=color, ec='black', lw=1, alpha=0.4))
 
         
     #create a new figure
@@ -533,7 +533,7 @@ def main():
         ax.add_patch(patch)
 
     if args.by_group:
-        ax.legend(patches,group_names)
+        ax.legend(patches,group_names, prop={'size':10})
     #show the plot!
     ax.autoscale_view()
     ax.set_aspect('equal')
