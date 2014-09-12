@@ -36,7 +36,7 @@ def point_match(pnt1, pnt2):
 
 def surface_intersections(tris, axis, coord):
     """
-    Returns a list of ordered intersections for a gien set of triangles.
+    Returns a list of ordered intersections for a set of triangles.
     """
     lines=[]
     #get all intersections for these surface triangles
@@ -81,7 +81,12 @@ def surface_intersections(tris, axis, coord):
 
 
 def intersection(axis, coord, triangle):
-
+    """
+    Returns the intersection (if one exists) between a *triangle*
+    and the plane based on the *axis* and *coord*. 
+    Also returns a boolean indicating whether or not an
+    intersection was found.
+    """
     #create an array for the coordinates
     triangle_verts=np.array([],ndmin=3)
     triangle_verts.shape =(0,3,3)
@@ -103,8 +108,11 @@ def intersection(axis, coord, triangle):
 
     return intersect, line
 
-def insert_pnt( line, coll):
-
+def insert_pnt(line, coll):
+    """
+    Adds a point on the appropriate side of the ordered line
+    collection. Only the non-conincident point is added.
+    """
     
     if point_match(line[0],coll[0]):
         coll = np.insert(coll, 0, line[1], 0)
@@ -120,11 +128,11 @@ def insert_pnt( line, coll):
     return coll
                 
 
-#########
-
-
 def get_surfaces():
-
+    """
+    Gets all surfaces in the current mesh instance
+    and returns them as a list.
+    """
     
     #get all the entsets
     sets = mesh.getEntSets(1)
@@ -146,20 +154,34 @@ def get_surfaces():
     return surfs
 
 def get_vols_by_group(volumes):
+    """
+    All group entity sets and name tag values
+    in the current mesh instance are retrieved.
     
-    mesh_sets=mesh.getEntSets()
+    The input list of volumes are then sorted into
+    their appropriate group (if one exists).
+    
+    The grouped volumes, and group names are
+    then returned as lists.
+    """
 
+    # Get all ent sets
+    mesh_sets=mesh.getEntSets()
 
     group_vols=[]
     group_names=[]
+    
+    #For each set get all its tags
     for s in mesh_sets:
         tags=mesh.getAllTags(s)
         for t in tags:
-            
+            #if the tag label is NAME, we've found a group set
             if t.name == 'NAME':
+                #save the group name
                 group_name = tag_to_script(t[s])
                 group_names.append(group_name)
-                #assume only volumes in groups for now
+                #add any volume in volumes that is 
+                #contained by the group set
                 vols = []
                 for vol in volumes:
                     if s.contains(vol): vols.append(vol)
@@ -169,6 +191,8 @@ def get_vols_by_group(volumes):
     return group_vols, group_names
                 
 
+#Borrowed this from Moataz
+#https://github.com/moatazharb/DAGMC/tree/develop/tools/dagmc_get_materials.py
 """
 function to transform the tags into strings
 tag : string of the tag to add to tag_list
@@ -195,7 +219,10 @@ def tag_to_script(tag):
 
     
 def get_all_volumes():
-
+    """
+    Get all volumes in the current mesh instance
+    and return them in a list.
+    """
     #get all the entsets
     sets = mesh.getEntSets(0)
     
@@ -212,12 +239,16 @@ def get_all_volumes():
                 if category_type == "Volume": vols.append(set)
 
 
-    print "There are " + str(len(vols)) + " volumes in this model."
+    #print "There are " + str(len(vols)) + " volumes in this model."
     return vols
 
 
 def get_vol_intersections(volume, intersect_dict):
-
+    """
+    Get's all child surface handles of the *volume*
+    and returnes all ordered intersections from the
+    input *intersect_dict*.
+    """
     #get the surfaces for this volume
     surfs = volume.getChildren(0)
 
@@ -232,7 +263,16 @@ def get_vol_intersections(volume, intersect_dict):
 # this function assumes that each plane-volume intersection will result 
 # in some number of complete loops
 def stitch(intersections):
+    """
+    Takes an input list of ordered *intersections* and
+    arranges them into complete loops. The loops are then
+    returned as a list.
 
+    NOTE: THIS FUNCTION ASSUMES THAT EACH VOLUME-PLANE INTERSECTION
+    WILL RESULT IN SOME NUMBER OF FINITE, COMPLETE LOOPS. IF THE 
+    SLICED MODEL IS NOT CONSIDERED WATERTIGHT, THIS FUNCTION MAY
+    NEVER FINISH.
+    """
     colls = []
     #first, check for complete loops
     i=0
@@ -295,20 +335,31 @@ def stitch(intersections):
     return colls
 
 def parsing():
-    parser = argparse.ArgumentParser()
+    """
+    Sets up expected arguments when running the file as main. 
+    """
 
+    #Set help description
+    description = 'This program is designed for the plotting of a watertight, DAGMC-ready .h5m file' 
+    description += 'w/ triangular facets.'
+    parser = argparse.ArgumentParser(description=description)
+    
+    #Filename argument
     parser.add_argument(
-        '-f', action='store', dest='filename', help='The path to the .h5m file')
+        '-f', action='store', dest='filename', required=True, help='The path to the .h5m file')
 
+    # Indicates the axis along which to slice
+    parser.add_argument('-axis', action='store', dest='axis', type=int,
+                        help='Set axis along which to slice the model x=0, y=1, z=2 (default = x)')
+
+    # Defines the coordinate of the plane along which to slice. 
+    parser.add_argument('-coord', action='store', dest='coord', type=float,
+                        help='Coordinate for the slice (default = 0)')
+    
+    # Indicates that the user wishes to plot groups as the same color
     parser.add_argument('--by-group', action='store_true', dest='by_group', 
                         help='Plot intersections by groups using the same color for each group')
 
-    parser.add_argument('-axis', action='store', dest='axis', type=int,
-                        help='Set axis along which to slice the model x=0, y=1, z=2')
-
-    parser.add_argument('-coord', action='store', dest='coord', type=float,
-                        help='Coordinate for the slice')
-    
     parser.set_defaults(axis = 0)
     parser.set_defaults(coord = 0)
     parser.set_defaults(by_group=False)
@@ -321,18 +372,22 @@ def parsing():
         
     return args
 
-# This function sets up coding for the path such that interior loops
-# will not be filled for a volume cross-section
 def return_coding(ob):
-    # The codes will be all "LINETO" commands, except for "MOVETO"s at the
-    # beginning of each subpath
+    """
+    The codes will be all "LINETO" commands, except for "MOVETO"s at the
+    beginning of each subpath.
+    """
     n = len(ob)
     codes = np.ones(n, dtype=Path.code_type) * Path.LINETO
     codes[0] = Path.MOVETO
     return codes
 
 def create_surface_intersections(surfs, axis, coord):
-
+    """
+    Generates and returns a dictionary with *surfs* as the keys
+    and the lists ordered intersections returned from *surface_intersections*
+    as the values.
+    """
     intersection_dict={}
     for surf in surfs: 
         # get the surface's triangles
@@ -345,7 +400,13 @@ def create_surface_intersections(surfs, axis, coord):
     return intersection_dict
 
 def slice_faceted_model(filename, coord, axis, by_group=False):
+    """
+    Returns a list of the paths required for patches and group_names (if called for)
+    for slice at *axis* and *coord* through a model contained by *filename*. 
 
+    If *by_group* is true, the path information returned will be sets of volume
+    patches sorted into their appropriate groups.
+    """
     mesh.load(filename)
 
     #get all surfaces in the file
@@ -386,7 +447,10 @@ def slice_faceted_model(filename, coord, axis, by_group=False):
     return all_paths, group_names
 
 def get_volume_paths(vols, axis, intersection_dict):
-
+    """
+    For a given set of volumes, this will return a list of 2D paths
+    for each volume in *vols*.
+    """
     all_coordinates=[]
     all_codes=[]
     orient_time=0
@@ -433,7 +497,11 @@ def get_volume_paths(vols, axis, intersection_dict):
 
 
 def orient_loops(loops):
-    
+    """
+    Takes a set of loops generated by the stitch function and orients
+    the windings of the loops such that the correct set of paths will
+    be filled in a plot according to the non-zero fill rule. 
+    """
     #first we will create a set of paths to represent the loops
     paths = []
     for loop in loops:
@@ -450,7 +518,13 @@ def orient_loops(loops):
     return loops
 
 def set_windings(current_windings, desired_windings, loops):
+    """
+    Compares the *current_windings* to the *desired_winding(
+    for each loop in *loops*.
+    If the winding values do not match, the points are reversed.
 
+    A list of the same size as *loops* is returned. 
+    """
     n = len(current_windings)
     assert(len(current_windings)==len(desired_windings))
     assert(len(current_windings)==len(loops))
@@ -462,9 +536,13 @@ def set_windings(current_windings, desired_windings, loops):
 
     return loops
 
-
 def find_winding(path):
-
+    """
+    Uses an by product of calculating a polygon's area
+    using a simplified Green's Theorem. Using this 
+    method, if the returned area is negative, the orientation
+    of the vertices if CCW. If positive, CW.
+    """
     area = 0
     verts = path.vertices
     j = len(verts) -1
@@ -475,7 +553,10 @@ def find_winding(path):
     return CW if area >= 0 else CCW
 
 def get_windings(paths):
-
+    """
+    Gets the windings of each path in path using find_winding()
+    and return them in a list. 
+    """
     windings=[]
     for path in paths:
         winding = find_winding(path)
@@ -483,7 +564,17 @@ def get_windings(paths):
     return windings
 
 def gen_containment(paths):
+    """
+    Generates a binary containment matrix in which the 
+    i,jth entry indicates whether or not path i is 
+    contained by path j. 
 
+    Uses the matplotlib path method .contains_path() to
+    set the value.
+
+    NOTE: NO PATHS SHOULD CROSS EACH OTHER, SO THIS WILL
+    ALWAYS GIVE A DEFINITE NESTING OF THE PATHS.
+    """
     n = len(paths)
     mat = np.empty([n,n])
     for i in range(n):
@@ -493,7 +584,10 @@ def gen_containment(paths):
     return mat
     
 def get_fill_windings(M):
-
+    """
+    Uses the sum of the rows in the binary containment matrix *M* to
+    calculate the desired windings of the paths represented by the matrix.
+    """
     a,b = M.shape
     assert(a==b)
     #use the sum of the rows of M to determine windings for path[i]
@@ -505,7 +599,6 @@ def get_fill_windings(M):
 
     return windings
         
-
 def main():
 
     #parse arguments and load the file
