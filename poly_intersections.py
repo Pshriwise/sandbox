@@ -353,16 +353,19 @@ def parsing():
     parser.add_argument('--by-group', action='store_true', dest='by_group', 
                         help='Plot intersections by groups using the same color for each group')
 
+    # Option for writing raw point data to file 
+    parser.add_artument( '--write-pnts', action='store_true', dest='write_pnts', help = 'If set, the program will now write raw point data to file name "slicepnts.txt".')
+
     parser.set_defaults(axis = 0)
     parser.set_defaults(coord = 0)
-    parser.set_defaults(by_group=False)
-
+    parser.set_defaults(by_group = False)
+    parser.set_defaults(file_out = 'slicepnts.txt')
+    parser.set_defaults(write_pnts = False)
     args = parser.parse_args()
 
     if not args.filename:
         raise Exception('h5m file path not specified!!. [-f] is not set')
 
-        
     return args
 
 def return_coding(ob):
@@ -606,8 +609,11 @@ def main():
     if __name__ == "__main__":
         print "Plotting..."
 
+    file = open('slicepnts.txt', 'a')
+    
     patches = []
     for coord, code in all_paths:
+        if args.write_pnts: np.savetxt(file, coord, delimiter = ' ')
         path = Path(coord, code)
         color = np.random.rand(3, 1)
         patches.append(PathPatch(path, color=color, ec='black', lw=1, alpha=0.4))
@@ -626,7 +632,8 @@ def main():
     ax.autoscale_view()
     ax.set_aspect('equal')
     plt.show()  
-       
+   
+    
 if __name__ == "__main__":
     start = time.clock()
     main()
