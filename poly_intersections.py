@@ -354,7 +354,7 @@ def parsing():
                         help='Plot intersections by groups using the same color for each group')
 
     # Option for writing raw point data to file 
-    parser.add_artument( '--write-pnts', action='store_true', dest='write_pnts', help = 'If set, the program will now write raw point data to file name "slicepnts.txt".')
+    parser.add_argument( '--write-pnts', action='store_true', dest='write_pnts', help = 'If set, the program will now write raw point data to file name "slicepnts.txt".')
 
     parser.set_defaults(axis = 0)
     parser.set_defaults(coord = 0)
